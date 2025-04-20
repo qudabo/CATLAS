@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cat Laser Tracking System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        h1 { color: #333; }
+        .control-panel {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .button-row {
+            margin: 15px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        .start {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .start:hover {
+            background-color: #45a049;
+        }
+        .stop {
+            background-color: #f44336;
+            color: white;
+        }
+        .stop:hover {
+            background-color: #d32f2f;
+        }
+        .neutral {
+            background-color: #2196F3;
+            color: white;
+        }
+        .neutral:hover {
+            background-color: #0b7dda;
+        }
+        .laser {
+            background-color: #ff9800;
+            color: white;
+        }
+        .laser:hover {
+            background-color: #e68a00;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #e7e7e7;
+        }
+        .status.running {
+            background-color: #dff0d8;
+            border-left: 5px solid #4CAF50;
+        }
+        .status.stopped {
+            background-color: #f2dede;
+            border-left: 5px solid #f44336;
+        }
+        #log {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+            font-family: monospace;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 3px 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry.info { color: #31708f; }
+        .log-entry.success { color: #3c763d; }
+        .log-entry.error { color: #a94442; }
+        .live-stream {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 640px;
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cat Laser Tracking System</h1>
+    
+    <div class="control-panel">
+        <h2>Controls</h2>
+        
+        <div class="button-row">
+            <button id="start-tracking" class="start">Start Tracking</button>
+            <button id="stop-tracking" class="stop">Stop Tracking</button>
+        </div>
+        
+        <div class="button-row">
+            <button id="center-servos" class="neutral">Center Servos</button>
+            <button id="test-corners" class="neutral">Test Corners</button>
+        </div>
+        
+        <div class="button-row">
+            <button id="laser-on" class="laser">Laser ON</button>
+            <button id="laser-off" class="laser">Laser OFF</button>
+        </div>
+        
+        <div id="tracking-status" class="status stopped">
+            Status: Not tracking
+        </div>
+    </div>
+    
+    <div class="live-stream-container">
+        <h2>Live View</h2>
+        <img src="/stream_cat_detection?fps=5" alt="Cat Detection Stream" class="live-stream">
+    </div>
+    
+    <div>
+        <h2>Activity Log</h2>
+        <div id="log"></div>
+    </div>
+    
+    <script>
+        // DOM elements
+        const startBtn = document.getElementById('start-tracking');
+        const stopBtn = document.getElementById('stop-tracking');
+        const centerBtn = document.getElementById('center-servos');
+        const cornersBtn = document.getElementById('test-corners');
+        const laserOnBtn = document.getElementById('laser-on');
+        const laserOffBtn = document.getElementById('laser-off');
+        const statusEl = document.getElementById('tracking-status');
+        const logEl = document.getElementById('log');
+        
+        // Log function
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logEl.insertBefore(entry, logEl.firstChild);
+            
+            // Limit log entries
+            if (logEl.children.length > 100) {
+                logEl.removeChild(logEl.lastChild);
+            }
+        }
+        
+        // API functions
+        async function apiCall(endpoint, successMsg, errorMsg) {
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    log(successMsg, 'success');
+                    return data;
+                } else {
+                    log(`${errorMsg}: ${data.message}`, 'error');
+                    return null;
+                }
+            } catch (error) {
+                log(`${errorMsg}: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Start tracking
+        startBtn.addEventListener('click', async () => {
+            const data = await apiCall(
+                '/cat_tracking/start',
+                'Cat tracking started',
+                'Failed to start tracking'
+            );
+            
+            if (data) {
+                statusEl.textContent = 'Status: Tracking active';
+                statusEl.className = 'status running';
+            }
+        });
+        
+        // Stop tracking
+        stopBtn.addEventListener('click', async () => {
+            const data = await apiCall(
+                '/cat_tracking/stop',
+                'Cat tracking stopped',
+                'Failed to stop tracking'
+            );
+            
+            if (data) {
+                statusEl.textContent = 'Status: Not tracking';
+                statusEl.className = 'status stopped';
+            }
+        });
+        
+        // Center servos
+        centerBtn.addEventListener('click', async () => {
+            await apiCall(
+                '/cat_tracking/center',
+                'Servos centered',
+                'Failed to center servos'
+            );
+        });
+        
+        // Test corners
+        cornersBtn.addEventListener('click', async () => {
+            await apiCall(
+                '/cat_tracking/test_corners',
+                'Testing corners',
+                'Failed to test corners'
+            );
+        });
+        
+        // Laser on
+        laserOnBtn.addEventListener('click', async () => {
+            await apiCall(
+                '/remote_control/laser/on',
+                'Laser turned ON',
+                'Failed to turn laser on'
+            );
+        });
+        
+        // Laser off
+        laserOffBtn.addEventListener('click', async () => {
+            await apiCall(
+                '/remote_control/laser/off',
+                'Laser turned OFF',
+                'Failed to turn laser off'
+            );
+        });
+        
+        // Check tracking status on page load
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/cat_tracking/status');
+                const data = await response.json();
+                
+                if (data.tracking_active) {
+                    statusEl.textContent = 'Status: Tracking active';
+                    statusEl.className = 'status running';
+                    log('Tracking is currently active', 'info');
+                } else {
+                    statusEl.textContent = 'Status: Not tracking';
+                    statusEl.className = 'status stopped';
+                    log('Tracking is currently inactive', 'info');
+                }
+                
+                // Log laser state
+                log(`Laser is currently ${data.laser_state}`, 'info');
+                
+            } catch (error) {
+                log(`Error checking status: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

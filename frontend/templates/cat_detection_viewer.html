@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Cat Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            padding: 10px;
+            background-color: #f5f5f5;
+            margin: 0;
+        }
+        h1 { 
+            color: #333; 
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .stream-container { 
+            max-width: 95%; 
+            margin: 0 auto 15px auto; 
+            border: 2px solid #333; 
+            border-radius: 8px; 
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            background-color: #000;
+            position: relative;
+        }
+        .stream-container img { 
+            max-width: 100%; 
+            height: auto;
+            display: block;
+        }
+        .controls { 
+            margin: 15px auto;
+            max-width: 500px;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .control-group {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        label { 
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .btn-group {
+            margin-top: 10px;
+        }
+        button { 
+            padding: 8px 16px; 
+            background: #4CAF50; 
+            color: white; 
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 4px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        button:hover { background: #45a049; }
+        button.stop { background: #f44336; }
+        button.stop:hover { background: #d32f2f; }
+        button.start { background: #2196F3; }
+        button.start:hover { background: #0b7dda; }
+        input[type="range"] {
+            width: 120px;
+            margin: 0 10px;
+        }
+        input[type="number"] { 
+            padding: 6px; 
+            width: 50px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .status-container {
+            display: flex;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            gap: 8px;
+        }
+        .status {
+            padding: 4px 8px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        .cat-detected {
+            background-color: rgba(76, 175, 80, 0.8) !important;
+        }
+        .fps-display {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            padding: 4px 8px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+        .processing-time {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            border-radius: 12px;
+            font-size: 13px;
+        }
+        .note {
+            font-style: italic;
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Real-time Cat Detection</h1>
+    
+    <div class="stream-container">
+        <img src="/stream_cat_detection?fps={{ fps }}" alt="Cat Detection Stream" id="stream">
+        <div class="status-container">
+            <div class="status" id="status">No cats detected</div>
+        </div>
+        <div class="fps-display" id="fps">0 FPS</div>
+        <div class="processing-time" id="processing-time">0 ms</div>
+    </div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label for="fps">Frame Rate:</label>
+            <input type="range" id="fps-slider" min="1" max="15" step="1" value="{{ fps }}">
+            <input type="number" id="fps" value="{{ fps }}" min="1" max="15" step="1">
+        </div>
+        
+        <div class="btn-group">
+            <button onclick="updateSettings()" class="update">Apply Settings</button>
+            <button onclick="toggleStream()" class="stop" id="stream-toggle">Pause</button>
+        </div>
+        
+        <div class="note">
+            Cat detection runs on remote server. Processing offloaded from Raspberry Pi to Mac.
+        </div>
+    </div>
+    
+    <script>
+        // Performance optimizations
+        const streamImg = document.getElementById('stream');
+        const statusEl = document.getElementById('status');
+        const fpsEl = document.getElementById('fps');
+        const procTimeEl = document.getElementById('processing-time');
+        const toggleBtn = document.getElementById('stream-toggle');
+        
+        let isStreaming = true;
+        let frameCount = 0;
+        let lastFrameTime = performance.now();
+        let lastUrl = '';
+        
+        // Track FPS with high precision
+        let frameTimestamps = [];
+        
+        // Sync range sliders with number inputs
+        document.getElementById('fps-slider').addEventListener('input', function() {
+            document.getElementById('fps').value = this.value;
+        });
+        
+        document.getElementById('fps').addEventListener('change', function() {
+            document.getElementById('fps-slider').value = this.value;
+        });
+        
+        // Stream image loaded handler - optimized for performance
+        streamImg.addEventListener('load', function() {
+            // Add timestamp to the array
+            const now = performance.now();
+            frameTimestamps.push(now);
+            
+            // Only keep the last 10 frames for FPS calculation
+            if (frameTimestamps.length > 10) {
+                frameTimestamps.shift();
+            }
+            
+            // Calculate FPS from the timestamps
+            if (frameTimestamps.length >= 2) {
+                const timeElapsed = frameTimestamps[frameTimestamps.length - 1] - frameTimestamps[0];
+                const frameCount = frameTimestamps.length - 1;
+                const fps = Math.round((frameCount / timeElapsed) * 1000);
+                fpsEl.textContent = fps + ' FPS';
+            }
+        }, { passive: true }); // Passive event for better performance
+        
+        // Function to update settings
+        function updateSettings() {
+            if (!isStreaming) toggleStream();
+            
+            const fps = document.getElementById('fps').value;
+            
+            // Create new stream URL
+            const newUrl = `/stream_cat_detection?fps=${fps}&_t=${Date.now()}`;
+            
+            // Only update if different from current
+            if (newUrl !== lastUrl) {
+                streamImg.src = newUrl;
+                lastUrl = newUrl;
+                
+                // Reset FPS tracking
+                frameTimestamps = [];
+            }
+        }
+        
+        // Toggle streaming on/off
+        function toggleStream() {
+            if (isStreaming) {
+                // Pause stream
+                streamImg.dataset.previousSrc = streamImg.src;
+                // Empty 1x1 transparent GIF - much smaller than PNG
+                streamImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+                toggleBtn.textContent = 'Resume';
+                toggleBtn.classList.remove('stop');
+                toggleBtn.classList.add('start');
+                statusEl.textContent = 'Stream paused';
+            } else {
+                // Resume stream
+                if (streamImg.dataset.previousSrc) {
+                    streamImg.src = streamImg.dataset.previousSrc;
+                } else {
+                    updateSettings();
+                }
+                toggleBtn.textContent = 'Pause';
+                toggleBtn.classList.remove('start');
+                toggleBtn.classList.add('stop');
+            }
+            
+            isStreaming = !isStreaming;
+        }
+        
+        // Update processing time display (uses X-Processing-Time header)
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'src') {
+                    // When image src changes, reset processing time display
+                    procTimeEl.textContent = 'Processing...';
+                }
+            });
+        });
+        
+        // Start observing the image for src attribute changes
+        observer.observe(streamImg, { attributes: true, attributeFilter: ['src'] });
+        
+        // Set up message channel for backend metrics reporting
+        if (window.EventSource) {
+            const eventSource = new EventSource('/stream_metrics');
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.processing_time) {
+                        procTimeEl.textContent = data.processing_time + ' ms';
+                    }
+                    if (data.cat_detected !== undefined) {
+                        if (data.cat_detected) {
+                            statusEl.textContent = `Cat detected`;
+                            statusEl.classList.add('cat-detected');
+                        } else {
+                            statusEl.textContent = 'No cats detected';
+                            statusEl.classList.remove('cat-detected');
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing metrics:', e);
+                }
+            };
+        }
+    </script>
+</body>
+</html>

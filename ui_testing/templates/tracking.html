@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Laser Tracking System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --danger-color: #f44336;
+            --warning-color: #ff9800;
+            --dark-color: #333;
+            --light-color: #f4f4f4;
+            --box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --border-radius: 8px;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: var(--light-color);
+            color: var(--dark-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            box-shadow: var(--box-shadow);
+        }
+        
+        h1, h2, h3 {
+            margin-bottom: 15px;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .card-header h2 {
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card-header h2 i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--box-shadow);
+            font-weight: 500;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #0d8bf2;
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #3d9640;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e68a00;
+        }
+
+        .btn-light {
+            background-color: #e0e0e0;
+            color: var(--dark-color);
+        }
+        
+        .btn-light:hover {
+            background-color: #d0d0d0;
+        }
+        
+        .btn-outlined {
+            background-color: transparent;
+            border: 2px solid currentColor;
+        }
+        
+        .btn-outlined.btn-primary {
+            color: var(--primary-color);
+        }
+        
+        .btn-outlined.btn-success {
+            color: var(--success-color);
+        }
+        
+        .btn-outlined.btn-danger {
+            color: var(--danger-color);
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: var(--light-color);
+        }
+        
+        .status-indicator .indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .status-active .indicator {
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-inactive .indicator {
+            background-color: var(--danger-color);
+        }
+
+        .status-active {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .status-inactive {
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .video-container {
+            position: relative;
+            width: 100%;
+            background-color: #000;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .video-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 10px;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .video-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        
+        .video-status.cat-detected {
+            background-color: rgba(76, 175, 80, 0.8);
+            color: white;
+        }
+        
+        .video-status.no-cat {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+        }
+        
+        .log-container {
+            background-color: #1e1e1e;
+            color: #ddd;
+            border-radius: var(--border-radius);
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .log-entry.info {
+            color: #64b5f6;
+        }
+        
+        .log-entry.success {
+            color: #81c784;
+        }
+        
+        .log-entry.error {
+            color: #e57373;
+        }
+
+        .log-entry.warning {
+            color: #ffb74d;
+        }
+        
+        .control-zone {
+            margin-top: 20px;
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background-color: #263238;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+            touch-action: none;
+        }
+        
+        .control-zone-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .laser-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: red;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px red;
+            pointer-events: none;
+        }
+
+        .fps-display {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            padding: 4px 8px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+
+        .processing-time {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            padding: 4px 8px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        
+        .fps-display.low {
+            color: #ff8a80;
+        }
+        
+        .fps-display.medium {
+            color: #ffee58;
+        }
+        
+        .fps-display.high {
+            color: #b9f6ca;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .settings-row label {
+            width: 100px;
+            font-weight: 500;
+        }
+        
+        .slider-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .slider-container input[type="range"] {
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+        
+        .slider-container input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            color: #777;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><i class="fas fa-cat"></i> Cat Laser Tracking System</h1>
+    </header>
+    
+    <div class="container">
+        <!-- Left Column -->
+        <div class="column">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-video"></i> Live Detection</h2>
+                </div>
+                <div class="video-container">
+                    <img src="/stream_cat_detection?fps=5" alt="Cat Detection Stream" id="video-stream">
+                    <div id="cat-status" class="video-status no-cat">No cats detected</div>
+                    <div class="fps-display" id="fps-display">0 FPS</div>
+                    <div class="processing-time" id="processing-time">0 ms</div>
+                </div>
+                
+                <div class="settings-row">
+                    <label for="fps-slider">Frame Rate:</label>
+                    <div class="slider-container">
+                        <input type="range" id="fps-slider" min="1" max="15" step="1" value="5">
+                        <input type="number" id="fps-value" value="5" min="1" max="15">
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="update-fps" class="btn btn-primary">
+                        <i class="fas fa-sync"></i> Apply FPS
+                    </button>
+                    <button id="toggle-stream" class="btn btn-warning">
+                        <i class="fas fa-pause"></i> Pause Stream
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-cogs"></i> System Controls</h2>
+                </div>
+                
+                <div class="status-indicator" id="tracking-status">
+                    <div class="indicator"></div>
+                    <div class="status-text">Tracking Status: Inactive</div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="start-tracking" class="btn btn-success">
+                        <i class="fas fa-play"></i> Start Tracking
+                    </button>
+                    <button id="stop-tracking" class="btn btn-danger">
+                        <i class="fas fa-stop"></i> Stop Tracking
+                    </button>
+                </div>
+                
+                <div class="button-group">
+                    <button id="center-servos" class="btn btn-light">
+                        <i class="fas fa-crosshairs"></i> Center Servos
+                    </button>
+                    <button id="test-corners" class="btn btn-light">
+                        <i class="fas fa-border-all"></i> Test Corners
+                    </button>
+                </div>
+
+                <div class="button-group">
+                    <button id="laser-on" class="btn btn-warning">
+                        <i class="fas fa-bolt"></i> Laser ON
+                    </button>
+                    <button id="laser-off" class="btn btn-outlined btn-warning">
+                        <i class="fas fa-power-off"></i> Laser OFF
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column -->
+        <div class="column">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-gamepad"></i> Manual Control</h2>
+                </div>
+                <p>Click or touch anywhere in the control zone to move the laser.</p>
+                <div id="control-zone" class="control-zone">
+                    <div class="control-zone-overlay"></div>
+                    <div id="laser-position" class="laser-dot"></div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-list"></i> Activity Log</h2>
+                    <button id="clear-log" class="btn btn-light btn-sm">Clear</button>
+                </div>
+                <div id="log" class="log-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        Cat Laser Tracking System - UI Testing Version | &copy; 2025
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const videoStream = document.getElementById('video-stream');
+            const fpsSlider = document.getElementById('fps-slider');
+            const fpsValue = document.getElementById('fps-value');
+            const updateFpsBtn = document.getElementById('update-fps');
+            const toggleStreamBtn = document.getElementById('toggle-stream');
+            const startTrackingBtn = document.getElementById('start-tracking');
+            const stopTrackingBtn = document.getElementById('stop-tracking');
+            const centerServosBtn = document.getElementById('center-servos');
+            const testCornersBtn = document.getElementById('test-corners');
+            const laserOnBtn = document.getElementById('laser-on');
+            const laserOffBtn = document.getElementById('laser-off');
+            const trackingStatus = document.getElementById('tracking-status');
+            const catStatus = document.getElementById('cat-status');
+            const fpsDisplay = document.getElementById('fps-display');
+            const processingTime = document.getElementById('processing-time');
+            const logContainer = document.getElementById('log');
+            const clearLogBtn = document.getElementById('clear-log');
+            const controlZone = document.getElementById('control-zone');
+            const laserPosition = document.getElementById('laser-position');
+            
+            // State
+            let isStreaming = true;
+            let frameTimestamps = [];
+            let lastUrl = '';
+            
+            // FPS sync between slider and number input
+            fpsSlider.addEventListener('input', function() {
+                fpsValue.value = this.value;
+            });
+            
+            fpsValue.addEventListener('change', function() {
+                fpsSlider.value = this.value;
+            });
+            
+            // Apply FPS button
+            updateFpsBtn.addEventListener('click', function() {
+                updateStreamFPS();
+            });
+            
+            // Toggle stream
+            toggleStreamBtn.addEventListener('click', function() {
+                toggleStream();
+            });
+            
+            // Control buttons
+            startTrackingBtn.addEventListener('click', function() {
+                startTracking();
+            });
+            
+            stopTrackingBtn.addEventListener('click', function() {
+                stopTracking();
+            });
+            
+            centerServosBtn.addEventListener('click', function() {
+                centerServos();
+            });
+            
+            testCornersBtn.addEventListener('click', function() {
+                testCorners();
+            });
+            
+            laserOnBtn.addEventListener('click', function() {
+                laserOn();
+            });
+            
+            laserOffBtn.addEventListener('click', function() {
+                laserOff();
+            });
+            
+            // Clear log
+            clearLogBtn.addEventListener('click', function() {
+                clearLog();
+            });
+            
+            // Manual control zone
+            controlZone.addEventListener('mousedown', function(e) {
+                moveToPosition(e);
+                controlZone.addEventListener('mousemove', moveToPosition);
+            });
+            
+            document.addEventListener('mouseup', function() {
+                controlZone.removeEventListener('mousemove', moveToPosition);
+            });
+            
+            controlZone.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                moveToPosition(e.touches[0]);
+                controlZone.addEventListener('touchmove', handleTouch);
+            });
+            
+            controlZone.addEventListener('touchend', function() {
+                controlZone.removeEventListener('touchmove', handleTouch);
+            });
+            
+            function handleTouch(e) {
+                e.preventDefault();
+                moveToPosition(e.touches[0]);
+            }
+            
+            // FPS calculation
+            videoStream.addEventListener('load', function() {
+                const now = performance.now();
+                frameTimestamps.push(now);
+                
+                if (frameTimestamps.length > 10) {
+                    frameTimestamps.shift();
+                }
+                
+                if (frameTimestamps.length >= 2) {
+                    const timeElapsed = frameTimestamps[frameTimestamps.length - 1] - frameTimestamps[0];
+                    const frameCount = frameTimestamps.length - 1;
+                    const fps = Math.round((frameCount / timeElapsed) * 1000);
+                    
+                    fpsDisplay.textContent = fps + ' FPS';
+                    
+                    // Color coding for FPS
+                    fpsDisplay.className = 'fps-display';
+                    if (fps < 5) {
+                        fpsDisplay.classList.add('low');
+                    } else if (fps < 10) {
+                        fpsDisplay.classList.add('medium');
+                    } else {
+                        fpsDisplay.classList.add('high');
+                    }
+                }
+            }, { passive: true });
+            
+            // Functions
+            function updateStreamFPS() {
+                const fps = fpsValue.value;
+                
+                // Create new stream URL
+                const newUrl = `/stream_cat_detection?fps=${fps}&_t=${Date.now()}`;
+                
+                // Only update if different from current
+                if (newUrl !== lastUrl) {
+                    videoStream.src = newUrl;
+                    lastUrl = newUrl;
+                    
+                    // Reset FPS tracking
+                    frameTimestamps = [];
+                    
+                    log(`Updated stream to ${fps} FPS`, 'info');
+                }
+            }
+            
+            function toggleStream() {
+                if (isStreaming) {
+                    // Pause stream
+                    videoStream.dataset.previousSrc = videoStream.src;
+                    videoStream.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
+                    toggleStreamBtn.innerHTML = '<i class="fas fa-play"></i> Resume';
+                    toggleStreamBtn.classList.remove('btn-warning');
+                    toggleStreamBtn.classList.add('btn-success');
+                    log('Stream paused', 'info');
+                } else {
+                    // Resume stream
+                    if (videoStream.dataset.previousSrc) {
+                        videoStream.src = videoStream.dataset.previousSrc;
+                    } else {
+                        updateStreamFPS();
+                    }
+                    toggleStreamBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                    toggleStreamBtn.classList.remove('btn-success');
+                    toggleStreamBtn.classList.add('btn-warning');
+                    log('Stream resumed', 'info');
+                }
+                
+                isStreaming = !isStreaming;
+            }
+            
+            function startTracking() {
+                fetch('/cat_tracking/start')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            trackingStatus.className = 'status-indicator status-active';
+                            trackingStatus.querySelector('.status-text').textContent = 'Tracking Status: Active';
+                            log('Cat tracking started', 'success');
+                        } else {
+                            log(`Error: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        log(`Failed to start tracking: ${error}`, 'error');
+                    });
+            }
+            
+            function stopTracking() {
+                fetch('/cat_tracking/stop')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            trackingStatus.className = 'status-indicator status-inactive';
+                            trackingStatus.querySelector('.status-text').textContent = 'Tracking Status: Inactive';
+                            log('Cat tracking stopped', 'info');
+                        } else {
+                            log(`Error: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        log(`Failed to stop tracking: ${error}`, 'error');
+                    });
+            }
+            
+            function centerServos() {
+                fetch('/cat_tracking/center')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            log('Servos centered', 'success');
+                            // Update laser dot position in UI
+                            const centerX = controlZone.offsetWidth / 2;
+                            const centerY = controlZone.offsetHeight / 2;
+                            laserPosition.style.left = centerX + 'px';
+                            laserPosition.style.top = centerY + 'px';
+                        } else {
+                            log(`Error: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        log(`Failed to center servos: ${error}`, 'error');
+                    });
+            }
+            
+            function testCorners() {
+                fetch('/cat_tracking/test_corners')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            log('Testing corner movements', 'info');
+                        } else {
+                            log(`Error: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        log(`Failed to test corners: ${error}`, 'error');
+                    });
+            }
+            
+            function laserOn() {
+                fetch('/remote_control/laser/on')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            log('Laser turned ON', 'success');
+                        } else {
+                            log(`Error: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        log(`Failed to turn laser on: ${error}`, 'error');
+                    });
+            }
+            
+            function laserOff() {
+                fetch('/remote_control/laser/off')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            log('Laser turned OFF', 'warning');
+                        } else {
+                            log(`Error: ${data.message}`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        log(`Failed to turn laser off: ${error}`, 'error');
+                    });
+            }
+            
+            function moveToPosition(e) {
+                const rect = controlZone.getBoundingClientRect();
+                let x, y;
+                
+                if (e.clientX) { // Mouse event
+                    x = e.clientX - rect.left;
+                    y = e.clientY - rect.top;
+                } else { // Touch event
+                    x = e.clientX - rect.left;
+                    y = e.clientY - rect.top;
+                }
+                
+                // Constrain to bounds
+                x = Math.max(0, Math.min(rect.width, x));
+                y = Math.max(0, Math.min(rect.height, y));
+                
+                // Update laser dot position
+                laserPosition.style.left = x + 'px';
+                laserPosition.style.top = y + 'px';
+                
+                // Calculate normalized position (0-1)
+                const normalizedX = x / rect.width;
+                const normalizedY = y / rect.height;
+                
+                // Send to server (debounced)
+                clearTimeout(laserPosition.moveTimeout);
+                laserPosition.moveTimeout = setTimeout(() => {
+                    sendMoveCommand(normalizedX, normalizedY);
+                }, 50);
+            }
+            
+            function sendMoveCommand(x, y) {
+                fetch('/remote_control/move', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        x: x,
+                        y: y
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'ok') {
+                        log(`Move error: ${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    log(`Failed to send move command: ${error}`, 'error');
+                });
+            }
+            
+            function log(message, type = 'info') {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                
+                const timestamp = new Date().toLocaleTimeString();
+                entry.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${message}`;
+                
+                logContainer.insertBefore(entry, logContainer.firstChild);
+                
+                // Limit log entries
+                if (logContainer.children.length > 100) {
+                    logContainer.removeChild(logContainer.lastChild);
+                }
+            }
+            
+            function clearLog() {
+                logContainer.innerHTML = '';
+                log('Log cleared', 'info');
+            }
+            
+            // Event source for metrics
+            if (window.EventSource) {
+                const eventSource = new EventSource('/stream_metrics');
+                
+                eventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        
+                        // Update processing time
+                        if (data.processing_time) {
+                            processingTime.textContent = data.processing_time + ' ms';
+                        }
+                        
+                        // Update cat detection status
+                        if (data.cat_detected !== undefined) {
+                            if (data.cat_detected) {
+                                catStatus.textContent = 'Cat Detected';
+                                catStatus.className = 'video-status cat-detected';
+                            } else {
+                                catStatus.textContent = 'No cats detected';
+                                catStatus.className = 'video-status no-cat';
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing metrics:', e);
+                    }
+                };
+                
+                eventSource.onerror = function() {
+                    log('Metrics connection lost. Reconnecting...', 'warning');
+                };
+            }
+            
+            // Check status on load
+            fetch('/cat_tracking/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.tracking_active) {
+                        trackingStatus.className = 'status-indicator status-active';
+                        trackingStatus.querySelector('.status-text').textContent = 'Tracking Status: Active';
+                    } else {
+                        trackingStatus.className = 'status-indicator status-inactive';
+                        trackingStatus.querySelector('.status-text').textContent = 'Tracking Status: Inactive';
+                    }
+                    
+                    log(`System initialized. Laser is ${data.laser_state}`, 'info');
+                })
+                .catch(error => {
+                    log(`Failed to get system status: ${error}`, 'error');
+                });
+            
+            // Initialize
+            log('UI Testing environment loaded', 'info');
+            log('This is a simulated environment without hardware', 'info');
+            
+            // Center the laser dot initially
+            centerServos();
+        });
+    </script>
+</body>
+</html>

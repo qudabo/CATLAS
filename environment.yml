@@ -1,0 +1,14 @@
+name: laser-turret
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - numpy
+  - opencv
+  - flask
+  - requests
+  - pip:
+    - picamera2
+    - pathlib
