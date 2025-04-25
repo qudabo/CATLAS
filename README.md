@@ -131,46 +131,8 @@ Key settings can be modified in `shared/servo_config.py`:
 5. Create a new Pull Request
 
 ## Circuit Information
-                 USB Power Bank
-                       │
-                 ┌─────┴─────┐
-                 │ Raspberry │
-                 │   Pi 4    │
-                 └─────┬─────┘
-                       │
-      ┌────────────────┼────────────────┐
-      │                │                │
-    +5 V             +3.3 V            GND
-      │                │                │
-      ▼                ▼                ▼
-  ┌───────────────────────────────────────┐
-  │            BREADBOARD                 │
-  │ ┌─────────+5V─────────┐               │
-  │ │ Camera Vcc          │               │
-  │ │ Servo1 Vcc          │               │
-  │ │ Servo2 Vcc          │               │
-  │ └─────────────────────┘               │
-  │ ┌──────+3.3V──────────┐               │
-  │ │ Laser + (anode)     │               │
-  │ └─────────────────────┘               │
-  │ ┌─────────GND─────────┐               │
-  │ │ Laser – (cathode)   │               │
-  │ │ Camera GND          │               │
-  │ │ Servo1 GND          │               │
-  │ │ Servo2 GND          │               │
-  │ └─────────────────────┘               │
-  └───────────────────────────────────────┘
+<img src="https://github.com/user-attachments/assets/62475ca4-c82b-4a3e-aef4-74450a08b16a" width="500"/>
 
+     
 
-Pi GPIO17 ──[4.7 kΩ]───┐
-                       ├── Base of 2N3906 PNP
-             [10 kΩ]───┘   ↑
-               ↑           │
-         Pull‑up to        │
-         +3.3 V rail       │
-                       ┌───┴──┐
-          +3.3 V rail─▶│ E    2N3906   Laser (+)
-                       │ C ────────────▶ (anode at +3.3 V rail)
-                       │ B
-Laser – (cathode) ◀────┴──────────────▶ GND rail
 
